@@ -1,0 +1,17 @@
+{
+  "requests": [
+      {
+        "image": {
+          "source": {
+              "gcsImageUri": "naturelake.png"
+          }
+        },
+        "features": [
+          {
+            "type": "LABEL_DETECTION",
+            "maxResults": 10
+          }
+        ]
+      }
+  ]
+}
