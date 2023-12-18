@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+  "sync"
 
 	vision "cloud.google.com/go/vision/apiv1"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
@@ -28,7 +29,8 @@ func IsValidImage(imagePath string) bool {
 	}
 }
 
-func ObtainImageLabels(ctx context.Context, imagePath string) {
+func ObtainImageLabels(ctx context.Context, imagePath string, wg *sync.WaitGroup) {
+  defer wg.Done()
 	f, err := os.Open(fmt.Sprintf("bucket/%s", imagePath))
 	if err != nil {
 		fmt.Printf("%s", err)
@@ -55,13 +57,16 @@ func ObtainImageLabels(ctx context.Context, imagePath string) {
 		return
 	}
 
+  fmt.Printf("%s\n", imagePath)
 	for _, entity := range entityAnnotations {
 		fmt.Println(entity)
 	}
+  fmt.Println()
 }
 
 func main() {
 	ctx := context.Background()
+  var wg sync.WaitGroup
 
 	bucket, err := os.ReadDir("bucket")
 	if err != nil {
@@ -69,12 +74,12 @@ func main() {
 		return
 	}
 
-	for _, object := range bucket {
-    if IsValidImage(object.Name()) {
-		  fmt.Println(object.Name())
-		  ObtainImageLabels(ctx, object.Name())
+	for _, entry := range bucket {
+    if IsValidImage(entry.Name()) {
+      wg.Add(1)
+      go ObtainImageLabels(ctx, entry.Name(), &wg)
     }
-		fmt.Println()
 	}
 
+  wg.Wait()
 }
